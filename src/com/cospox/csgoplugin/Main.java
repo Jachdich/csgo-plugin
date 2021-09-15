@@ -7,8 +7,10 @@ import java.util.function.Predicate;
 import javax.swing.plaf.BorderUIResource.EmptyBorderUIResource;
 
 import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -16,8 +18,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.inventory.meta.BlockDataMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
@@ -69,17 +73,31 @@ public class Main extends JavaPlugin implements Listener {
     
     @EventHandler
     public void interactEvent(PlayerInteractEvent e) {
-    	if ((e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_AIR)) && 
-    		 e.getPlayer().getItemInHand().getType().equals(Material.NETHERITE_HOE)) {
+    	if ((e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK)) && 
+    	   	 e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.NETHERITE_HOE)) {
+    		//int modelId = e.getPlayer().getInventory().getItemInMainHand().getItemMeta().getCustomModelData();
+    		Gun gun = Gun.getGunByModelId(/*modelId*/0);
     		e.setCancelled(true);
-    		e.getPlayer().giveExpLevels(1);
-    		fireTheGun(e.getPlayer(), 100, 0.05, 10, 0.2);
+    		double spray = gun.sprayNormal;
+    		if (e.getPlayer().isSneaking()) {
+    			spray = gun.sprayCrouch;
+    		}
+    		if (e.getPlayer().isSprinting()) {
+    			spray = gun.spraySprint;
+    		}
+    		e.getPlayer().sendMessage("Range, radius, damage, spray: " + gun.range + ", " + gun.radius + ", " + gun.damage + ", " + spray);
+    		fireTheGun(e.getPlayer(), gun.range, gun.radius, gun.damage, spray);
+    	} else if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) && e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.IRON_INGOT)) {
+    		Location l = e.getClickedBlock().getLocation().add(0, 1, 0);
+    		l.getBlock().setType(Material.ITEM_FRAME);
+    		//l.getBlock().setBlockData();
+    		e.getPlayer().sendMessage("ASDF");
     	}
     }
     
     @EventHandler
     public void sneakEvent(PlayerToggleSneakEvent e) {
-    	if (!e.getPlayer().getItemInHand().getType().equals(Material.SPYGLASS)) return;
+    	if (!e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.SPYGLASS)) return;
     	boolean isAccurate = e.getPlayer().isHandRaised();
     	if (!e.isSneaking()) {
     		if (isAccurate) {

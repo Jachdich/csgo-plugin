@@ -3,3 +3,8 @@ main: com.cospox.csgoplugin.Main
 version: 0.0.1
 api-version: 1.17
 commands:
+    jointeam:
+        description: Join a team
+        usage: /jointeam <team> (one of ct or t)
+        permission: csgo.jointeam
+

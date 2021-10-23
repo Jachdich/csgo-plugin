@@ -7,4 +7,8 @@ commands:
         description: Join a team
         usage: /jointeam <team> (one of ct or t)
         permission: csgo.jointeam
+    startgame:
+        description: Start the game
+        usage: /startgame
+        permission: csgo.startgame
 

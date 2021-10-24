@@ -18,13 +18,14 @@ import net.md_5.bungee.api.ChatColor;
 
 public class InvGUI implements Listener {
     private Inventory inv;
-
-	public InvGUI() {
+    private GameState gs;
+	public InvGUI(GameState state) {
 		inv = Bukkit.createInventory(null, 27 * 2, "Weapon Selector");
         inv.setItem(11,     createGuiItem(Material.NETHERITE_HOE, 1, ChatColor.RESET + "AK47",  "§asome gun stats here", "§aand here too"));
         inv.setItem(11 + 9, createGuiItem(Material.NETHERITE_HOE, 2, ChatColor.RESET + "M4A1S", "§asome gun stats here", "§aand here too"));
         inv.setItem(11 + 18,createGuiItem(Material.SPYGLASS,      3, ChatColor.RESET + "AWP",   "§asome gun stats here", "§aand here too"));
         inv.setItem(15,     createGuiItem(Material.WOODEN_SWORD,  1, ChatColor.RESET + "Knife", "§asome gun stats here", "§aand here too"));
+        this.gs = state;
 	}
     public void openInventory(final HumanEntity ent) {
         ent.openInventory(inv);
@@ -55,11 +56,21 @@ public class InvGUI implements Listener {
 
         final Player p = (Player) e.getWhoClicked();
 
-        // Using slots click is a best option for your inventory click's
-        //p.sendMessage("You clicked at slot " + e.getRawSlot());
         int group = (e.getRawSlot() % 9 - 2) / 2;
-        p.getInventory().addItem(clickedItem);
-        p.sendMessage("X: " + group);
+        //p.getInventory().addItem(clickedItem);
+        //p.sendMessage("X: " + group);
+        PlayerData d = gs.getData(p);
+        if (group == 0) {
+        	//guns
+        	d.selectedGun = clickedItem.clone();
+        } else if (group == 1) {
+        	//pistols
+        	d.selectedPistol = clickedItem.clone();
+        } else if (group == 2) {
+        	//knives
+        	d.selectedKnife = clickedItem.clone();
+        }
+        p.sendMessage("Selected the " + clickedItem.getItemMeta().getDisplayName());
     }
 
     // Cancel dragging in our inventory

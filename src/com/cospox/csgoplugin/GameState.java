@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.bukkit.Color;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,6 +13,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import net.md_5.bungee.api.ChatColor;
 
@@ -24,15 +27,91 @@ public class GameState implements CommandExecutor {
 	}
 	
 	public void playerJoin(Player p) {
+		p.setHealth(20);
+		p.setGameMode(GameMode.ADVENTURE);
 		total.add(new PlayerData(p));
-		System.out.println("Adding player " + p.getName());
+		p.getInventory().clear();
+		ItemStack selector = new ItemStack(Material.COPPER_INGOT, 1);
+		ItemMeta meta = selector.getItemMeta();
+		meta.setDisplayName(ChatColor.RESET + "Weapon Selector");
+		meta.setCustomModelData(1);
+		selector.setItemMeta(meta);
+		p.getInventory().addItem(selector);
+		p.teleport(arena.lobby);
+	}
+	
+	public void giveArmour(Player p, Team t) {
+		Color armourColour = t.equals(Team.TERRORIST) ? Color.fromRGB(0xc05f31) : Color.fromRGB(0x05057f);
+		
+		ItemStack head = new ItemStack(Material.LEATHER_HELMET, 1);
+		ItemStack body = new ItemStack(Material.LEATHER_CHESTPLATE, 1);
+		ItemStack legs = new ItemStack(Material.LEATHER_LEGGINGS, 1);
+		ItemStack feet = new ItemStack(Material.LEATHER_BOOTS, 1);
+		
+		setArmourMeta(head, armourColour);
+		setArmourMeta(body, armourColour);
+		setArmourMeta(legs, armourColour);
+		setArmourMeta(feet, armourColour);
+		p.getInventory().setBoots(feet);
+		p.getInventory().setChestplate(body);
+		p.getInventory().setLeggings(legs);
+		p.getInventory().setHelmet(head);
+	}
+	
+	public void setArmourMeta(ItemStack item, Color col) {
+		ItemMeta meta = item.getItemMeta();
+		LeatherArmorMeta ameta = (LeatherArmorMeta)meta;
+		ameta.setColor(col);
+		item.setItemMeta(ameta);
 	}
 	
 	public void playerLeave(Player p) {
 		removePlayer(total, p);
 		removePlayer(t, p);
 		removePlayer(ct, p);
-		System.out.println("Removing player " + p.getName());
+	}
+	
+	public void playerDie(Player p) {
+		getData(p).alive = false;
+		p.setGameMode(GameMode.SPECTATOR);
+		//check t and ct teams for alive-ness
+		if (!isTeamAlive(t)) ctWin();
+		if (!isTeamAlive(ct)) tWin();
+	}
+	
+	public boolean isTeamAlive(ArrayList<PlayerData> team) {
+		boolean anyoneAlive = false;
+		for (PlayerData d : team ) {
+			if (d.alive) { anyoneAlive = true; break; }
+		}
+		return anyoneAlive;
+	}
+
+	public void resetGame() {
+		t.clear();
+		ct.clear();
+	}
+	
+	public void tWin() {
+		resetGame();
+		for (PlayerData d : total) {
+			d.p.sendTitle("" + ChatColor.RED + ChatColor.BOLD + "Terrorists" + ChatColor.RESET + " win!", null, 5, 60, 5);
+		}
+	}
+	
+	public void ctWin() {
+		resetGame();
+		for (PlayerData d : total) {
+			d.p.sendTitle("" + ChatColor.GREEN + ChatColor.BOLD + "Counter terrorists" + ChatColor.RESET + " win!", null, 5, 40, 5);
+		}
+	}
+			
+	public void bombExplode() {
+		tWin();
+	}
+	
+	public void bombDefuse() {
+		ctWin();
 	}
 	
 	//TODO use hashmaps instead of linear searches if this becomes a problem (next 2 methods)
@@ -83,11 +162,21 @@ public class GameState implements CommandExecutor {
 		for (PlayerData d : ct) {
 			d.p.teleport(arena.ctSpawn);
 			d.p.getInventory().clear();
+			d.p.setGameMode(GameMode.ADVENTURE);
+			giveArmour(d.p, Team.COUNTERTERRORIST);
+			if (d.selectedGun != null) d.p.getInventory().addItem(d.selectedGun);
+			if (d.selectedPistol != null) d.p.getInventory().addItem(d.selectedPistol);
+			if (d.selectedKnife != null) d.p.getInventory().addItem(d.selectedKnife);			
 		}
 
 		for (PlayerData d : t) {
 			d.p.teleport(arena.tSpawn);
 			d.p.getInventory().clear();
+			d.p.setGameMode(GameMode.ADVENTURE);
+			giveArmour(d.p, Team.TERRORIST);
+			if (d.selectedGun != null) d.p.getInventory().addItem(d.selectedGun);
+			if (d.selectedPistol != null) d.p.getInventory().addItem(d.selectedPistol);
+			if (d.selectedKnife != null) d.p.getInventory().addItem(d.selectedKnife);		
 		}
 		
     	Random rnd = ThreadLocalRandom.current();
@@ -110,10 +199,10 @@ public class GameState implements CommandExecutor {
 			Player p = (Player)sender;
 			if (args[0].equals("t") || args[0].equals("terrorists") ) {
 				getData(p).preferredTeam = Team.TERRORIST;
-				sender.sendMessage("Successfully joined the terrorists");
+				sender.sendMessage("Successfully joined the " + ChatColor.RED + ChatColor.BOLD + "terrorists");
 			} else if (args[0].equals("ct") || args[0].equals("counterterrorists") ) {
 				getData(p).preferredTeam = Team.COUNTERTERRORIST;
-				sender.sendMessage("Successfully joined the counterterrorists");
+				sender.sendMessage("Successfully joined the " + ChatColor.GREEN + ChatColor.BOLD + "counterterrorists");
 			} else {
 				sender.sendMessage("Unknown team \"" + args[0] + "\". Try using one of t, ct, terrorists, couunterterrorists");
 			}

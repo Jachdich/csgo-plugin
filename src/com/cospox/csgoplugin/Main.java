@@ -20,7 +20,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -37,24 +36,14 @@ import org.bukkit.util.Vector;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 
+//TODO rounds
+//TODO score
+
 public class Main extends JavaPlugin implements Listener {
 	private InvGUI gunSel;
-	private Bomb currentBomb;
-	private GameState state;
+	GameState state;
     @Override
     public void onEnable() {
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-        	public void run() {
-        		updateBomb();
-        	}
-        }, 0, 20);
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-        	public void run() {
-        		if (currentBomb != null) {
-        			currentBomb.updateTimer(currentBomb.loc.getWorld().getGameTime());
-        		}
-        	}
-        }, 0, 2);
         Arena arena = new Arena(
         		new Location(this.getServer().getWorlds().get(0), 10.5, 70.5, 0.5),
         		new Location(this.getServer().getWorlds().get(0), 10.5, 70.5, 10.5),
@@ -63,12 +52,13 @@ public class Main extends JavaPlugin implements Listener {
         		new Location(this.getServer().getWorlds().get(0), -84.5, 100, -4.5)
         );
         
-        state = new GameState(arena);
+        state = new GameState(arena, this);
         this.gunSel = new InvGUI(state);
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(gunSel, this);
         this.getCommand("jointeam").setExecutor(state);
         this.getCommand("startgame").setExecutor(state);
+        this.getCommand("reset").setExecutor(state);
         getServer().getWorlds().get(0).setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
         getServer().getWorlds().get(0).setGameRule(GameRule.DO_TILE_DROPS, false);
         getServer().getWorlds().get(0).setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
@@ -77,29 +67,6 @@ public class Main extends JavaPlugin implements Listener {
         for (Player p: getServer().getOnlinePlayers()) {
         	state.playerJoin(p);
         }
-    }
-    
-    private void updateBomb() {
-    	if (currentBomb != null) {
-    		currentBomb.time -= 1;
-    		for (Player p : getServer().getOnlinePlayers()) {
-    			if (currentBomb.beingDefused) {
-        			p.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Bomb being defused in " + currentBomb.defuseToGo / 20));
-    			} else if (!currentBomb.defused) {
-        			p.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Bomb going off in " + currentBomb.time));
-    			}
-    		}
-    		if (currentBomb.time < 1) {
-    			currentBomb.explode();
-    			//notify the gamestate of the bomb exploding
-    			state.bombExplode();
-    			currentBomb = null;
-    		} else if (currentBomb.defused) {
-    			//notify the gamestate of the bomb being defused
-    			state.bombDefuse();
-    			currentBomb = null;
-    		}
-    	}
     }
     
     @Override
@@ -182,7 +149,7 @@ public class Main extends JavaPlugin implements Listener {
     	//if the player right clicked with the bomb (iron ingot)
     	} else if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) &&
     			   e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.IRON_INGOT)
-    			   && currentBomb == null) {
+    			   && state.bomb != null) {
     		//block above clicked block because the item frame goes on top
     		Location l = e.getClickedBlock().getLocation().add(0, 1, 0);
     		//get middle of block
@@ -206,7 +173,7 @@ public class Main extends JavaPlugin implements Listener {
         		//remove one from the number of bombs in the player's inventory
         		//this will usually set the amount to zero
         		e.getPlayer().getInventory().getItemInMainHand().setAmount(e.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
-        		currentBomb = new Bomb(l, entity);
+        		state.bomb = new Bomb(l, entity, this);
     		} else {
     			l.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, l, 10);
     			e.getPlayer().sendMessage("You can't place the bomb here!");
@@ -214,7 +181,12 @@ public class Main extends JavaPlugin implements Listener {
     	//clicked using the gun selector item
     	} else if ((e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK))
     			   && e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.COPPER_INGOT)) {
-    		gunSel.openInventory(e.getPlayer());
+    		Team t = state.getData(e.getPlayer()).getPossibleTeam();
+    		if (t == null) {
+    			e.getPlayer().sendMessage("Please choose a team before selecting a weapon!");
+    		} else {
+    			gunSel.openInventory(e.getPlayer(), t);
+    		}
     	}
     }
     
@@ -222,8 +194,8 @@ public class Main extends JavaPlugin implements Listener {
     public void interactEntityEvent(PlayerInteractEntityEvent e) {
     	if (e.getRightClicked().getType().equals(EntityType.ITEM_FRAME)) {
     		e.setCancelled(true);
-    		if (currentBomb != null) {
-    			currentBomb.defuseAttempt(e.getPlayer().getWorld().getGameTime());
+    		if (state.bomb != null) {
+    			state.bomb.defuseAttempt(e.getPlayer().getWorld().getGameTime());
     		}
     	}
     }

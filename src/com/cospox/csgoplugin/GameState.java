@@ -14,6 +14,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
 
 import net.md_5.bungee.api.ChatColor;
 
@@ -22,8 +25,23 @@ public class GameState implements CommandExecutor {
 	public ArrayList<PlayerData> ct    = new ArrayList<PlayerData>();
 	public ArrayList<PlayerData> total = new ArrayList<PlayerData>();
 	Arena arena;
-	public GameState(Arena arena) {
+	private Main plugin;
+	public Bomb bomb;
+	public int timeoutSeconds = -1;
+	//private Scoreboard board;
+	public GameState(Arena arena, Main plugin) {
 		this.arena = arena;
+		//this.board = plugin.getServer().getScoreboardManager().getNewScoreboard();
+		//Objective o = board.registerNewObjective("", "hjkl", "bnm");
+		//o.setDisplaySlot(DisplaySlot.SIDEBAR);
+		this.plugin = plugin;
+        plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+        	public void run() {
+        		if (timeoutSeconds > 0) timeoutSeconds -= 1;
+        		if (timeoutSeconds == 0) { ctWin(); timeoutSeconds = -1; }
+        		System.out.println(timeoutSeconds);
+        	}
+        }, 0, 20);
 	}
 	
 	public void playerJoin(Player p) {
@@ -38,6 +56,7 @@ public class GameState implements CommandExecutor {
 		selector.setItemMeta(meta);
 		p.getInventory().addItem(selector);
 		p.teleport(arena.lobby);
+		//p.setScoreboard(board);
 	}
 	
 	public void giveArmour(Player p, Team t) {
@@ -75,7 +94,7 @@ public class GameState implements CommandExecutor {
 		getData(p).alive = false;
 		p.setGameMode(GameMode.SPECTATOR);
 		//check t and ct teams for alive-ness
-		if (!isTeamAlive(t)) ctWin();
+		if (!isTeamAlive(t)) { if (bomb == null) { ctWin(); } }
 		if (!isTeamAlive(ct)) tWin();
 	}
 	
@@ -88,8 +107,12 @@ public class GameState implements CommandExecutor {
 	}
 
 	public void resetGame() {
+		total.clear();
 		t.clear();
 		ct.clear();
+		for (Player p : plugin.getServer().getOnlinePlayers()) {
+			playerJoin(p);
+		}
 	}
 	
 	public void tWin() {
@@ -107,10 +130,12 @@ public class GameState implements CommandExecutor {
 	}
 			
 	public void bombExplode() {
+		bomb = null;
 		tWin();
 	}
 	
 	public void bombDefuse() {
+		bomb = null;
 		ctWin();
 	}
 	
@@ -189,6 +214,11 @@ public class GameState implements CommandExecutor {
 		t.get(pos).p.getInventory().addItem(item);
 	}
 	
+	void startGame() {
+		assignTeams();
+		timeoutSeconds = 2 * 60;
+	}
+	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String name, String[] args) {
 		if (name.equals("jointeam")) {
@@ -199,17 +229,21 @@ public class GameState implements CommandExecutor {
 			Player p = (Player)sender;
 			if (args[0].equals("t") || args[0].equals("terrorists") ) {
 				getData(p).preferredTeam = Team.TERRORIST;
+				getData(p).clearWeapons();
 				sender.sendMessage("Successfully joined the " + ChatColor.RED + ChatColor.BOLD + "terrorists");
 			} else if (args[0].equals("ct") || args[0].equals("counterterrorists") ) {
 				getData(p).preferredTeam = Team.COUNTERTERRORIST;
+				getData(p).clearWeapons();
 				sender.sendMessage("Successfully joined the " + ChatColor.GREEN + ChatColor.BOLD + "counterterrorists");
 			} else {
 				sender.sendMessage("Unknown team \"" + args[0] + "\". Try using one of t, ct, terrorists, couunterterrorists");
 			}
 			return true;
 		} else if (name.equals("startgame")) {
-			assignTeams();
+			startGame();
 			return true;
+		} else if (name.equals("reset")) {
+			resetGame();
 		}
 		return true;
 	}

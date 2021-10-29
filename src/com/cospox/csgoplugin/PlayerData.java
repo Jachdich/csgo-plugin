@@ -23,4 +23,26 @@ public class PlayerData {
 		selectedKnife = null;
 		selectedPistol = null;
 	}
+	
+	public Team getPossibleTeam() {
+		if (this.assignedTeam == null) {
+			return this.preferredTeam;
+		} else {
+			return this.assignedTeam;
+		}
+	}
+	
+	public void assignDefaultWeapons() {
+		if (getPossibleTeam() == Team.COUNTERTERRORIST) {
+			this.selectedGun = Gun.guns[0].getItemStack();
+		} else {
+			this.selectedGun = Gun.guns[1].getItemStack();
+		}
+	}
+	
+	public void clearWeapons() {
+		selectedGun = null;
+		selectedKnife = null;
+		selectedPistol = null;
+	}
 }

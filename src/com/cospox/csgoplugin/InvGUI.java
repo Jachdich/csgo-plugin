@@ -17,18 +17,26 @@ import org.bukkit.inventory.meta.ItemMeta;
 import net.md_5.bungee.api.ChatColor;
 
 public class InvGUI implements Listener {
-    private Inventory inv;
+    private Inventory tInv;
+    private Inventory ctInv;
     private GameState gs;
 	public InvGUI(GameState state) {
-		inv = Bukkit.createInventory(null, 27 * 2, "Weapon Selector");
-        inv.setItem(11,     createGuiItem(Material.NETHERITE_HOE, 1, ChatColor.RESET + "AK47",  "§asome gun stats here", "§aand here too"));
-        inv.setItem(11 + 9, createGuiItem(Material.NETHERITE_HOE, 2, ChatColor.RESET + "M4A1S", "§asome gun stats here", "§aand here too"));
-        inv.setItem(11 + 18,createGuiItem(Material.SPYGLASS,      3, ChatColor.RESET + "AWP",   "§asome gun stats here", "§aand here too"));
-        inv.setItem(15,     createGuiItem(Material.WOODEN_SWORD,  1, ChatColor.RESET + "Knife", "§asome gun stats here", "§aand here too"));
+		tInv = Bukkit.createInventory(null, 27 * 2, "Weapon Selector");
+		ctInv = Bukkit.createInventory(null, 27 * 2, "Weapon Selector");
+		
+        tInv.setItem(11,     createGuiItem(Material.NETHERITE_HOE, 1, ChatColor.RESET + "T AK47",  "§asome gun stats here", "§aand here too"));
+        tInv.setItem(11 + 9, createGuiItem(Material.NETHERITE_HOE, 2, ChatColor.RESET + "T M4A1S", "§asome gun stats here", "§aand here too"));
+        tInv.setItem(11 + 18,createGuiItem(Material.SPYGLASS,      3, ChatColor.RESET + "T AWP",   "§asome gun stats here", "§aand here too"));
+        tInv.setItem(15,     createGuiItem(Material.WOODEN_SWORD,  1, ChatColor.RESET + "T Knife", "§asome gun stats here", "§aand here too"));
+        
+        ctInv.setItem(11,     createGuiItem(Material.NETHERITE_HOE, 1, ChatColor.RESET + "CT AK47",  "§asome gun stats here", "§aand here too"));
+        ctInv.setItem(11 + 9, createGuiItem(Material.NETHERITE_HOE, 2, ChatColor.RESET + "CT M4A1S", "§asome gun stats here", "§aand here too"));
+        ctInv.setItem(11 + 18,createGuiItem(Material.SPYGLASS,      3, ChatColor.RESET + "CT AWP",   "§asome gun stats here", "§aand here too"));
+        ctInv.setItem(15,     createGuiItem(Material.WOODEN_SWORD,  1, ChatColor.RESET + "CT Knife", "§asome gun stats here", "§aand here too"));
         this.gs = state;
 	}
-    public void openInventory(final HumanEntity ent) {
-        ent.openInventory(inv);
+    public void openInventory(final HumanEntity ent, Team t) {
+        ent.openInventory(t == Team.COUNTERTERRORIST ? ctInv : tInv);
     }
     
     protected ItemStack createGuiItem(final Material material, final int modeldata, final String name, final String... lore) {
@@ -46,7 +54,7 @@ public class InvGUI implements Listener {
 
     @EventHandler
     public void onInventoryClick(final InventoryClickEvent e) {
-        if (e.getInventory() != inv) return;
+        if (e.getInventory() != tInv && e.getInventory() != ctInv) return;
 
         e.setCancelled(true);
 
@@ -76,7 +84,7 @@ public class InvGUI implements Listener {
     // Cancel dragging in our inventory
     @EventHandler
     public void onInventoryClick(final InventoryDragEvent e) {
-        if (e.getInventory().equals(inv)) {
+        if (e.getInventory().equals(ctInv) || e.getInventory().equals(tInv)) {
           e.setCancelled(true);
         }
     }

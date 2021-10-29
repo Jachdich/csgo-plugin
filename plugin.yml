@@ -11,4 +11,7 @@ commands:
         description: Start the game
         usage: /startgame
         permission: csgo.startgame
-
+    reset:
+        description: Reset the game before starting a new game or something
+        usage: /reset
+        permission: csgo.startgame

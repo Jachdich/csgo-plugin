@@ -10,6 +10,9 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.attribute.AttributeModifier.Operation;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -49,7 +52,8 @@ public class Main extends JavaPlugin implements Listener {
         		new Location(this.getServer().getWorlds().get(0), 10.5, 70.5, 10.5),
         		new Location(this.getServer().getWorlds().get(0), 0.5, 70.5, 0.5),
         		new Location(this.getServer().getWorlds().get(0), 0.5, 70.5, 10.5),
-        		new Location(this.getServer().getWorlds().get(0), -84.5, 100, -4.5)
+        		new Location(this.getServer().getWorlds().get(0), -84.5, 100, -4.5),
+        		new Location(this.getServer().getWorlds().get(0), -84.5, 100, -4.5) //TODO get the real one
         );
         
         state = new GameState(arena, this);
@@ -112,7 +116,7 @@ public class Main extends JavaPlugin implements Listener {
     }
     
     private static Predicate<Entity> humanPredicate(Player p1) {
-    	return p -> p.getType() == EntityType.PLAYER && !p.equals(p1);
+    	return p -> /*p.getType() == EntityType.PLAYER && */!p.equals(p1);
     }
     
     private void fireSpecificGun(int id, boolean sneaking, boolean sprinting, Player player) {
@@ -145,7 +149,11 @@ public class Main extends JavaPlugin implements Listener {
     		int modelId = itemMeta.getCustomModelData();
     		fireSpecificGun(modelId, e.getPlayer().isSneaking(), e.getPlayer().isSprinting(), e.getPlayer());
     		e.setCancelled(true);
-    	
+    		e.getPlayer().setCooldown(Material.NETHERITE_SWORD, 2);
+    		ItemMeta meta = e.getPlayer().getInventory().getItemInMainHand().getItemMeta();
+            meta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, new AttributeModifier("AttackSpeed", -1, Operation.ADD_NUMBER));
+            e.getPlayer().getInventory().getItemInMainHand().setItemMeta(meta);
+
     	//if the player right clicked with the bomb (iron ingot)
     	} else if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) &&
     			   e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.IRON_INGOT)

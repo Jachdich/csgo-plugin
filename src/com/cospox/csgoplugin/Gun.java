@@ -5,8 +5,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 public class Gun {
-	public static Gun[] guns = {new Gun(Gun.GunType.AK47, 0.2, 0.01, 0.5, 10, 200, 0.01, 10, 1, 20, 30),
-								new Gun(Gun.GunType.M4A1S,0.2, 0.01, 0.5, 10, 200, 0.01, 20, 2, 30, 40),
+	public static Gun[] guns = {new Gun(Gun.GunType.AK47, 0.2, 0.01, 0.5, 3, 200, 0.01, 5, 1, 20, 30),
+								new Gun(Gun.GunType.M4A1S,0.2, 0.01, 0.5, 4, 200, 0.01, 8, 2, 30, 40),
 								new Gun(Gun.GunType.AWP,  1.0, 0.01, 1.5, 15, 400, 0.02, 30, 3, 40, 50)};
 	
 	public enum GunType {

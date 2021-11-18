@@ -28,6 +28,10 @@ public class GameState implements CommandExecutor {
 	private Main plugin;
 	public Bomb bomb;
 	public int timeoutSeconds = -1;
+	public int tWins = 0;
+	public int ctWins = 0;
+	public int totalRounds = 0;
+	public static final int maxRounds = 10;
 	//private Scoreboard board;
 	public GameState(Arena arena, Main plugin) {
 		this.arena = arena;
@@ -74,6 +78,7 @@ public class GameState implements CommandExecutor {
 		selector.setItemMeta(meta);
 		p.getInventory().addItem(selector);
 		p.teleport(arena.lobby);
+		p.setBedSpawnLocation(arena.spawn);
 		//p.setScoreboard(board);
 	}
 	
@@ -128,6 +133,7 @@ public class GameState implements CommandExecutor {
 		total.clear();
 		t.clear();
 		ct.clear();
+		timeoutSeconds = -1;
 		for (Player p : plugin.getServer().getOnlinePlayers()) {
 			playerJoin(p);
 		}
@@ -148,11 +154,15 @@ public class GameState implements CommandExecutor {
 	}
 			
 	public void bombExplode() {
+		plugin.getServer().getScheduler().cancelTask(bomb.t1);
+		plugin.getServer().getScheduler().cancelTask(bomb.t2);
 		bomb = null;
 		tWin();
 	}
 	
 	public void bombDefuse() {
+		plugin.getServer().getScheduler().cancelTask(bomb.t1);
+		plugin.getServer().getScheduler().cancelTask(bomb.t2);
 		bomb = null;
 		ctWin();
 	}

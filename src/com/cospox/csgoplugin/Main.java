@@ -4,12 +4,16 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 
+import org.bukkit.Difficulty;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.attribute.AttributeModifier.Operation;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -38,6 +42,20 @@ import net.md_5.bungee.api.chat.TextComponent;
 
 //TODO rounds
 //TODO score
+//TODO when someone dies u sometimes get their shit
+//TODO global jointeam messages
+//TODO automatically set gamemode to peaceful
+//TODO bomb has been planted
+//TODO XP ammo counter, bar reload
+//TODO guns should come loaded
+//TODO bomb still goes off even tho people die
+//TODO default knifep
+//TODO clear inv when die
+//TODO new round 3 seconds after winning
+//after every round u get moeny if you win or kill
+//switch sides every time??
+//time to get weapons and buy shit idk
+//TODO disable friendly fire
 
 public class Main extends JavaPlugin implements Listener {
 	private InvGUI gunSel;
@@ -45,11 +63,12 @@ public class Main extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         Arena arena = new Arena(
-        		new Location(this.getServer().getWorlds().get(0), 10.5, 70.5, 0.5),
-        		new Location(this.getServer().getWorlds().get(0), 10.5, 70.5, 10.5),
-        		new Location(this.getServer().getWorlds().get(0), 0.5, 70.5, 0.5),
-        		new Location(this.getServer().getWorlds().get(0), 0.5, 70.5, 10.5),
-        		new Location(this.getServer().getWorlds().get(0), -84.5, 100, -4.5)
+        		new Location(this.getServer().getWorlds().get(0), 6.5, 111, -123.5),
+        		new Location(this.getServer().getWorlds().get(0), -47.5, 110, -125.5),
+        		new Location(this.getServer().getWorlds().get(0), -32.5, 114, -52.5),
+        		new Location(this.getServer().getWorlds().get(0), -10, 107, -123),
+        		new Location(this.getServer().getWorlds().get(0), -84.5, 100, -4.5),
+        		new Location(this.getServer().getWorlds().get(0), -23, 131, -98) //TODO get the real one
         );
         
         state = new GameState(arena, this);
@@ -63,6 +82,9 @@ public class Main extends JavaPlugin implements Listener {
         getServer().getWorlds().get(0).setGameRule(GameRule.DO_TILE_DROPS, false);
         getServer().getWorlds().get(0).setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
         getServer().getWorlds().get(0).setGameRule(GameRule.NATURAL_REGENERATION, false);
+        getServer().getWorlds().get(0).setGameRule(GameRule.DO_ENTITY_DROPS, false);
+        getServer().getWorlds().get(0).setGameRule(GameRule.KEEP_INVENTORY, true);
+        getServer().getWorlds().get(0).setDifficulty(Difficulty.PEACEFUL);
         
         for (Player p: getServer().getOnlinePlayers()) {
         	state.playerJoin(p);
@@ -154,7 +176,11 @@ public class Main extends JavaPlugin implements Listener {
     		int modelId = itemMeta.getCustomModelData();
     		fireSpecificGun(modelId, e.getPlayer().isSneaking(), e.getPlayer().isSprinting(), e.getPlayer());
     		e.setCancelled(true);
-    	
+    		//e.getPlayer().setCooldown(Material.NETHERITE_SWORD, 2);
+    		//ItemMeta meta = e.getPlayer().getInventory().getItemInMainHand().getItemMeta();
+            //meta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, new AttributeModifier("AttackSpeed", -1, Operation.ADD_NUMBER));
+            //e.getPlayer().getInventory().getItemInMainHand().setItemMeta(meta);
+
     	//if the player right clicked with the bomb (iron ingot)
     	} else if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) &&
     			   e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.IRON_INGOT)
@@ -167,10 +193,11 @@ public class Main extends JavaPlugin implements Listener {
     		
     		//radius of bomb placement
     		double d = 2.1;
-    		if ((Math.abs(l2.getX() - state.arena.bombA.getX()) < d &&
-    			 Math.abs(l2.getZ() - state.arena.bombA.getZ()) < d) ||
-    			(Math.abs(l2.getX() - state.arena.bombB.getX()) < d &&
-    			 Math.abs(l2.getZ() - state.arena.bombB.getZ()) < d)) {
+    		if ((Math.abs(l2.getX() - state.arena.bombA.getX()) < 2.1 &&
+    			((l2.getZ() - state.arena.bombA.getZ() < 3.1) ||
+    			(l2.getZ() - state.arena.bombA.getZ() > -2.1))) ||
+    			(Math.abs(l2.getX() - state.arena.bombB.getX()) < 3.1 &&
+    			 Math.abs(l2.getZ() - state.arena.bombB.getZ()) < 2.1)) {
     			//spawn invisible item frame to put the bomb in
         		ItemFrame entity = (ItemFrame)l.getWorld().spawnEntity(l, EntityType.ITEM_FRAME);
         		entity.setVisible(false);

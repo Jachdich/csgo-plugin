@@ -23,15 +23,16 @@ public class Bomb {
 	private ItemFrame frame;
 	public boolean defused = false;
 	private Main plugin;
+	int t1, t2;
 	public Bomb(Location loc, ItemFrame frame, Main plugin) {
 		this.loc = loc;
 		this.frame = frame;
-        plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+        t1 = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
         	public void run() {
         		updateTimer(loc.getWorld().getGameTime());
         	}
         }, 0, 2);
-        plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+        t2 = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
         	public void run() {
         		updateBomb();
         	}

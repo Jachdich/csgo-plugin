@@ -42,6 +42,24 @@ public class GameState implements CommandExecutor {
         		System.out.println(timeoutSeconds);
         	}
         }, 0, 20);
+        plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
+        	public void run() {
+        		updateReload();
+        	}
+        }, 0, 1);
+	}
+	
+	public void updateReload() {
+		for (PlayerData pd : total) {
+			if (pd.reloadCooldown > 0) {
+				pd.reloadCooldown -= 1;
+				pd.ob.getScore("Reloading...").setScore(pd.reloadCooldown);
+			} else if (pd.reloadCooldown == 0){
+				pd.sb.resetScores("Reloading...");
+				pd.reloadCooldown = -1;
+				//pd.reload();
+			}
+		}
 	}
 	
 	public void playerJoin(Player p) {
@@ -182,6 +200,7 @@ public class GameState implements CommandExecutor {
 				ct.add(d);
 				d.assignedTeam = Team.COUNTERTERRORIST;
 			}
+			d.assignDefaultWeapons();
 		}
 		
 		for (PlayerData d : ct) {

@@ -112,14 +112,13 @@ public class Main extends JavaPlugin implements Listener {
     }
     
     private static Predicate<Entity> humanPredicate(Player p1) {
-    	return p -> p.getType() == EntityType.PLAYER && !p.equals(p1);
+    	return p -> /*p.getType() == EntityType.PLAYER && */!p.equals(p1);
     }
     
     private void fireSpecificGun(int id, boolean sneaking, boolean sprinting, Player player) {
     	Gun gun = Gun.getGunByModelId(id);
     	PlayerData data = state.getData(player);
-    	if ((data.cooldown + gun.cooldown) < player.getWorld().getGameTime()) {
-        	//player.setCooldown(Material.NETHERITE_HOE, 1);
+    	if ((data.cooldown + gun.cooldown) < player.getWorld().getGameTime() && data.rounds > 0) {
     		data.cooldown = player.getWorld().getGameTime();
         	double spray = gun.sprayNormal;
     		if (sneaking) {
@@ -129,7 +128,17 @@ public class Main extends JavaPlugin implements Listener {
     			spray = gun.spraySprint;
     		}
     		fireTheGun(player, gun.range, gun.radius, gun.damage, spray);
+    		data.rounds -= 1;
+    		data.ob.getScore("Ammo").setScore((int) data.rounds);
     	}
+    }
+    
+    private boolean isGun(ItemStack item) {
+    	if (item.getType() != Material.NETHERITE_HOE && item.getType() != Material.SPYGLASS) return false;
+    	ItemMeta meta = item.getItemMeta();
+    	if (!meta.hasCustomModelData()) return false;
+    	if (meta.getCustomModelData() > 0) return true;
+    	return false;
     }
     
     @EventHandler
@@ -149,7 +158,8 @@ public class Main extends JavaPlugin implements Listener {
     	//if the player right clicked with the bomb (iron ingot)
     	} else if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) &&
     			   e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.IRON_INGOT)
-    			   && state.bomb != null) {
+    			   && state.bomb == null) {
+    		e.getPlayer().sendMessage("something");
     		//block above clicked block because the item frame goes on top
     		Location l = e.getClickedBlock().getLocation().add(0, 1, 0);
     		//get middle of block
@@ -187,6 +197,13 @@ public class Main extends JavaPlugin implements Listener {
     		} else {
     			gunSel.openInventory(e.getPlayer(), t);
     		}
+    	}
+    	//left click using gun, reload
+    	else if ((e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) &&
+    			  isGun(e.getPlayer().getInventory().getItemInMainHand())) {
+    		int modelId = e.getItem().getItemMeta().getCustomModelData();
+    		state.getData(e.getPlayer()).reload(Gun.getGunByModelId(modelId));
+    		state.getData(e.getPlayer()).reloadCooldown = 100;
     	}
     }
     

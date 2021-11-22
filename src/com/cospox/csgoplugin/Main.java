@@ -10,6 +10,8 @@ import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -40,26 +42,34 @@ import org.bukkit.util.Vector;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 
+//TODO testing
+//TODO global jointeam messages
+//TODO when someone dies u sometimes get their shit
+//TODO clear inv when die
+//TODO automatically set gamemode to peaceful
+//TODO XP ammo counter, bar reload
+//TODO bomb has been planted
+//TODO gun fire cooldown animation: ender pearl cooldown
+//TODO bomb still goes off even tho people die
+//TODO guns should come loaded
+//TODO disable friendly fire
+
+
+
 //TODO rounds
 //TODO score
-//TODO when someone dies u sometimes get their shit
-//TODO global jointeam messages
-//TODO automatically set gamemode to peaceful
-//TODO bomb has been planted
-//TODO XP ammo counter, bar reload
-//TODO guns should come loaded
-//TODO bomb still goes off even tho people die
-//TODO default knifep
-//TODO clear inv when die
+//TODO fix num of rounds
+//TODO default knife
 //TODO new round 3 seconds after winning
 //after every round u get moeny if you win or kill
 //switch sides every time??
 //time to get weapons and buy shit idk
-//TODO disable friendly fire
-
+//TODO sound effects, bomb, dying, shooting
+	//done ish: shooting
 public class Main extends JavaPlugin implements Listener {
 	private InvGUI gunSel;
 	GameState state;
+	private static final boolean FRIENDLY_FIRE_DISABLED = true;
     @Override
     public void onEnable() {
         Arena arena = new Arena(
@@ -119,12 +129,19 @@ public class Main extends JavaPlugin implements Listener {
     		Vector l2 = look.clone();
     		w.spawnParticle(Particle.ASH, p.getEyeLocation().add(l2.multiply(n)), 1, 0, 0, 0, 0);
     	}
+		w.playSound(p.getEyeLocation(), Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, SoundCategory.BLOCKS, 100, 0.5f);
     	if (ray != null) {
     		Entity hit = ray.getHitEntity();
     		if (hit != null/* && hit.getType() == EntityType.PLAYER*/) {
     			//Player hitPlayer = (Player)hit;
     			//hitPlayer.damage(damage);
     			LivingEntity e = ((LivingEntity)hit);
+    			if (e instanceof Player) {
+    				Player phit = (Player)e;
+    				if (state.getTeam(phit) == state.getTeam(p) && FRIENDLY_FIRE_DISABLED) {
+    					return;
+    				}
+    			}
     			e.damage(damage);
     			//hitPlayer.setVelocity(new Vector(0, 1, 0));
     		} else {
@@ -151,7 +168,7 @@ public class Main extends JavaPlugin implements Listener {
     		}
     		fireTheGun(player, gun.range, gun.radius, gun.damage, spray);
     		data.rounds -= 1;
-    		data.ob.getScore("Ammo").setScore((int) data.rounds);
+    		player.setLevel(data.rounds);
     	}
     }
     
@@ -173,10 +190,15 @@ public class Main extends JavaPlugin implements Listener {
     		//ignore regular hoe that doesnt do anything
     		if (!itemMeta.hasCustomModelData()) return;
     		
+    		PlayerData pd = state.getData(e.getPlayer());
+    		//can't fire while reloading
+    		if (pd.reloadCooldown != -1) return;
+    		
     		int modelId = itemMeta.getCustomModelData();
     		fireSpecificGun(modelId, e.getPlayer().isSneaking(), e.getPlayer().isSprinting(), e.getPlayer());
     		e.setCancelled(true);
-    		//e.getPlayer().setCooldown(Material.NETHERITE_SWORD, 2);
+    		e.getPlayer().setCooldown(Material.NETHERITE_HOE, Gun.getGunByModelId(modelId).cooldown);
+    		e.getPlayer().setCooldown(Material.SPYGLASS, Gun.getGunByModelId(modelId).cooldown);
     		//ItemMeta meta = e.getPlayer().getInventory().getItemInMainHand().getItemMeta();
             //meta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, new AttributeModifier("AttackSpeed", -1, Operation.ADD_NUMBER));
             //e.getPlayer().getInventory().getItemInMainHand().setItemMeta(meta);
@@ -191,8 +213,6 @@ public class Main extends JavaPlugin implements Listener {
     		//get middle of block
     		Location l2 = l.add(0.5, 0, 0.5);
     		
-    		//radius of bomb placement
-    		double d = 2.1;
     		if ((Math.abs(l2.getX() - state.arena.bombA.getX()) < 2.1 &&
     			((l2.getZ() - state.arena.bombA.getZ() < 3.1) ||
     			(l2.getZ() - state.arena.bombA.getZ() > -2.1))) ||
@@ -211,6 +231,7 @@ public class Main extends JavaPlugin implements Listener {
         		//this will usually set the amount to zero
         		e.getPlayer().getInventory().getItemInMainHand().setAmount(e.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
         		state.bomb = new Bomb(l, entity, this);
+        		getServer().broadcastMessage("The bomb has been planted");
     		} else {
     			l.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, l, 10);
     			e.getPlayer().sendMessage("You can't place the bomb here!");
@@ -230,7 +251,6 @@ public class Main extends JavaPlugin implements Listener {
     			  isGun(e.getPlayer().getInventory().getItemInMainHand())) {
     		int modelId = e.getItem().getItemMeta().getCustomModelData();
     		state.getData(e.getPlayer()).reload(Gun.getGunByModelId(modelId));
-    		state.getData(e.getPlayer()).reloadCooldown = 100;
     	}
     }
     
@@ -253,6 +273,9 @@ public class Main extends JavaPlugin implements Listener {
 		
     	
     	if (!e.isSneaking()) {
+    		PlayerData pd = state.getData(e.getPlayer());
+    		//can't fire while reloading
+    		if (pd.reloadCooldown != -1) return;
     		fireSpecificGun(modelId, e.getPlayer().isHandRaised(), e.getPlayer().isSprinting(), e.getPlayer());
        	}
     	if (e.isSneaking()) {

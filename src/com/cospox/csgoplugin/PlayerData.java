@@ -13,6 +13,7 @@ public class PlayerData {
 	public long cooldown;
 	public int rounds = 0;
 	public int reloadCooldown = -1;
+	public int maxCooldown = -1;
 	public boolean alive = true;
 	public ItemStack selectedGun = null, selectedKnife = null, selectedPistol = null;
 	Scoreboard sb;
@@ -49,9 +50,11 @@ public class PlayerData {
 	public void assignDefaultWeapons() {
 		if (this.selectedGun == null) {
 			if (getPossibleTeam() == Team.COUNTERTERRORIST) {
-				this.selectedGun = Gun.guns[0].getItemStack();
+				this.selectedGun = Gun.guns[Gun.CTDEFAULT].getItemStack();
+				this.reload(Gun.guns[Gun.CTDEFAULT]);
 			} else {
-				this.selectedGun = Gun.guns[1].getItemStack();
+				this.selectedGun = Gun.guns[Gun.TDEFAULT].getItemStack();
+				this.reload(Gun.guns[Gun.TDEFAULT]);
 			}
 		}
 	}
@@ -64,6 +67,13 @@ public class PlayerData {
 	
 	public void reload(Gun g) {
 		this.rounds = g.maxRounds;
-		this.ob.getScore("Ammo").setScore((int) this.rounds);
+		p.setLevel(rounds);
+		maxCooldown = g.reloadTime;
+		reloadCooldown = g.reloadTime;
+	}
+	
+	public void reloadWhatever() {
+		int data = selectedGun.getItemMeta().getCustomModelData();
+		reload(Gun.getGunByModelId(data));
 	}
 }

@@ -58,6 +58,7 @@ public class GameState implements CommandExecutor {
 			if (pd.reloadCooldown > 0) {
 				pd.reloadCooldown -= 1;
 				pd.ob.getScore("Reloading...").setScore(pd.reloadCooldown);
+	    		pd.p.setExp((float)pd.reloadCooldown / (float)pd.maxCooldown);
 			} else if (pd.reloadCooldown == 0){
 				pd.sb.resetScores("Reloading...");
 				pd.reloadCooldown = -1;
@@ -140,6 +141,10 @@ public class GameState implements CommandExecutor {
 	}
 	
 	public void tWin() {
+		if (bomb != null) {
+			bomb.cancelTimers();
+			bomb = null;
+		}
 		resetGame();
 		for (PlayerData d : total) {
 			d.p.sendTitle("" + ChatColor.RED + ChatColor.BOLD + "Terrorists" + ChatColor.RESET + " win!", null, 5, 60, 5);
@@ -147,6 +152,10 @@ public class GameState implements CommandExecutor {
 	}
 	
 	public void ctWin() {
+		if (bomb != null) {
+			bomb.cancelTimers();
+			bomb = null;
+		}
 		resetGame();
 		for (PlayerData d : total) {
 			d.p.sendTitle("" + ChatColor.GREEN + ChatColor.BOLD + "Counter terrorists" + ChatColor.RESET + " win!", null, 5, 40, 5);
@@ -154,15 +163,13 @@ public class GameState implements CommandExecutor {
 	}
 			
 	public void bombExplode() {
-		plugin.getServer().getScheduler().cancelTask(bomb.t1);
-		plugin.getServer().getScheduler().cancelTask(bomb.t2);
+		bomb.cancelTimers();
 		bomb = null;
 		tWin();
 	}
 	
 	public void bombDefuse() {
-		plugin.getServer().getScheduler().cancelTask(bomb.t1);
-		plugin.getServer().getScheduler().cancelTask(bomb.t2);
+		bomb.cancelTimers();
 		bomb = null;
 		ctWin();
 	}
@@ -220,7 +227,8 @@ public class GameState implements CommandExecutor {
 			giveArmour(d.p, Team.COUNTERTERRORIST);
 			if (d.selectedGun != null) d.p.getInventory().addItem(d.selectedGun);
 			if (d.selectedPistol != null) d.p.getInventory().addItem(d.selectedPistol);
-			if (d.selectedKnife != null) d.p.getInventory().addItem(d.selectedKnife);			
+			if (d.selectedKnife != null) d.p.getInventory().addItem(d.selectedKnife);
+			d.reloadWhatever();
 		}
 
 		for (PlayerData d : t) {
@@ -230,7 +238,8 @@ public class GameState implements CommandExecutor {
 			giveArmour(d.p, Team.TERRORIST);
 			if (d.selectedGun != null) d.p.getInventory().addItem(d.selectedGun);
 			if (d.selectedPistol != null) d.p.getInventory().addItem(d.selectedPistol);
-			if (d.selectedKnife != null) d.p.getInventory().addItem(d.selectedKnife);		
+			if (d.selectedKnife != null) d.p.getInventory().addItem(d.selectedKnife);
+			d.reloadWhatever();
 		}
 		
     	Random rnd = ThreadLocalRandom.current();
@@ -260,10 +269,12 @@ public class GameState implements CommandExecutor {
 				getData(p).preferredTeam = Team.TERRORIST;
 				getData(p).clearWeapons();
 				sender.sendMessage("Successfully joined the " + ChatColor.RED + ChatColor.BOLD + "terrorists");
+				sender.getServer().broadcastMessage(sender.getName() + " has joined the " + ChatColor.RED + ChatColor.BOLD + "terrorists");
 			} else if (args[0].equals("ct") || args[0].equals("counterterrorists") ) {
 				getData(p).preferredTeam = Team.COUNTERTERRORIST;
 				getData(p).clearWeapons();
 				sender.sendMessage("Successfully joined the " + ChatColor.GREEN + ChatColor.BOLD + "counterterrorists");
+				sender.getServer().broadcastMessage(sender.getName() + " has joined the " + ChatColor.GREEN + ChatColor.BOLD + "counterterrorists");
 			} else {
 				sender.sendMessage("Unknown team \"" + args[0] + "\". Try using one of t, ct, terrorists, couunterterrorists");
 			}
@@ -275,5 +286,9 @@ public class GameState implements CommandExecutor {
 			resetGame();
 		}
 		return true;
+	}
+	
+	public Team getTeam(Player p) {
+		return getData(p).assignedTeam;
 	}
 }

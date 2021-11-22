@@ -91,4 +91,9 @@ public class Bomb {
 		}
 		lastDefuseTick = tick;
 	}
+	
+	public void cancelTimers() {
+		plugin.getServer().getScheduler().cancelTask(t1);
+		plugin.getServer().getScheduler().cancelTask(t2);
+	}
 }

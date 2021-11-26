@@ -43,7 +43,6 @@ public class GameState implements CommandExecutor {
         	public void run() {
         		if (timeoutSeconds > 0) timeoutSeconds -= 1;
         		if (timeoutSeconds == 0) { ctWin(); timeoutSeconds = -1; }
-        		System.out.println(timeoutSeconds);
         	}
         }, 0, 20);
         plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
@@ -57,10 +56,8 @@ public class GameState implements CommandExecutor {
 		for (PlayerData pd : total) {
 			if (pd.reloadCooldown > 0) {
 				pd.reloadCooldown -= 1;
-				pd.ob.getScore("Reloading...").setScore(pd.reloadCooldown);
 	    		pd.p.setExp((float)pd.reloadCooldown / (float)pd.maxCooldown);
 			} else if (pd.reloadCooldown == 0){
-				pd.sb.resetScores("Reloading...");
 				pd.reloadCooldown = -1;
 				//pd.reload();
 			}
@@ -199,7 +196,6 @@ public class GameState implements CommandExecutor {
 	
 	public void assignTeams() {
 		for (PlayerData d : total) {
-			d.p.getServer().getPlayer("KingJellyfishII").sendMessage(d.p.getDisplayName());
 			if (d.preferredTeam == null) {
 				if (t.size() > ct.size()) {
 					ct.add(d);
@@ -220,14 +216,20 @@ public class GameState implements CommandExecutor {
 			d.assignDefaultWeapons();
 		}
 		
+		ItemStack knife = new ItemStack(Material.WOODEN_SWORD, 1);
+		ItemMeta kmeta = knife.getItemMeta();
+		kmeta.setCustomModelData(1);
+		kmeta.setUnbreakable(true);
+		kmeta.setDisplayName(ChatColor.RESET + "Knife");
+		knife.setItemMeta(kmeta);
+		
 		for (PlayerData d : ct) {
 			d.p.teleport(arena.ctSpawn);
 			d.p.getInventory().clear();
 			d.p.setGameMode(GameMode.ADVENTURE);
 			giveArmour(d.p, Team.COUNTERTERRORIST);
 			if (d.selectedGun != null) d.p.getInventory().addItem(d.selectedGun);
-			if (d.selectedPistol != null) d.p.getInventory().addItem(d.selectedPistol);
-			if (d.selectedKnife != null) d.p.getInventory().addItem(d.selectedKnife);
+			d.p.getInventory().addItem(knife.clone());
 			d.reloadWhatever();
 		}
 
@@ -237,8 +239,7 @@ public class GameState implements CommandExecutor {
 			d.p.setGameMode(GameMode.ADVENTURE);
 			giveArmour(d.p, Team.TERRORIST);
 			if (d.selectedGun != null) d.p.getInventory().addItem(d.selectedGun);
-			if (d.selectedPistol != null) d.p.getInventory().addItem(d.selectedPistol);
-			if (d.selectedKnife != null) d.p.getInventory().addItem(d.selectedKnife);
+			d.p.getInventory().addItem(knife.clone());
 			d.reloadWhatever();
 		}
 		
@@ -268,12 +269,10 @@ public class GameState implements CommandExecutor {
 			if (args[0].equals("t") || args[0].equals("terrorists") ) {
 				getData(p).preferredTeam = Team.TERRORIST;
 				getData(p).clearWeapons();
-				sender.sendMessage("Successfully joined the " + ChatColor.RED + ChatColor.BOLD + "terrorists");
 				sender.getServer().broadcastMessage(sender.getName() + " has joined the " + ChatColor.RED + ChatColor.BOLD + "terrorists");
 			} else if (args[0].equals("ct") || args[0].equals("counterterrorists") ) {
 				getData(p).preferredTeam = Team.COUNTERTERRORIST;
 				getData(p).clearWeapons();
-				sender.sendMessage("Successfully joined the " + ChatColor.GREEN + ChatColor.BOLD + "counterterrorists");
 				sender.getServer().broadcastMessage(sender.getName() + " has joined the " + ChatColor.GREEN + ChatColor.BOLD + "counterterrorists");
 			} else {
 				sender.sendMessage("Unknown team \"" + args[0] + "\". Try using one of t, ct, terrorists, couunterterrorists");

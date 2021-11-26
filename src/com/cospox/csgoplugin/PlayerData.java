@@ -15,7 +15,7 @@ public class PlayerData {
 	public int reloadCooldown = -1;
 	public int maxCooldown = -1;
 	public boolean alive = true;
-	public ItemStack selectedGun = null, selectedKnife = null, selectedPistol = null;
+	public ItemStack selectedGun = null;
 	Scoreboard sb;
 	Objective ob;
 	public PlayerData(Player p) {
@@ -35,8 +35,6 @@ public class PlayerData {
 		preferredTeam = null;
 		assignedTeam = null;
 		selectedGun = null;
-		selectedKnife = null;
-		selectedPistol = null;
 	}
 	
 	public Team getPossibleTeam() {
@@ -61,8 +59,6 @@ public class PlayerData {
 	
 	public void clearWeapons() {
 		selectedGun = null;
-		selectedKnife = null;
-		selectedPistol = null;
 	}
 	
 	public void reload(Gun g) {

@@ -59,11 +59,15 @@ import net.md_5.bungee.api.chat.TextComponent;
 //TODO rounds
 //TODO score
 //TODO fix num of rounds
-//TODO default knife
 //TODO new round 3 seconds after winning
 //after every round u get moeny if you win or kill
 //switch sides every time??
 //time to get weapons and buy shit idk
+
+
+//TODO awp shoot cooldown animation
+//TODO different guns for t and ct
+//TODO default knife
 //TODO sound effects, bomb, dying, shooting
 	//done ish: shooting
 public class Main extends JavaPlugin implements Listener {

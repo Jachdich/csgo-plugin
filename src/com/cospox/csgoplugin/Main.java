@@ -71,7 +71,8 @@ import net.md_5.bungee.api.chat.TextComponent;
 //TODO sound effects, bomb, dying, shooting
 	//done ish: shooting
 public class Main extends JavaPlugin implements Listener {
-	private InvGUI gunSel;
+	private GunSelGUI gunSel;
+	private TeamSelGUI teamSel;
 	GameState state;
 	private static final boolean FRIENDLY_FIRE_DISABLED = true;
     @Override
@@ -86,9 +87,11 @@ public class Main extends JavaPlugin implements Listener {
         );
         
         state = new GameState(arena, this);
-        this.gunSel = new InvGUI(state);
+        this.gunSel = new GunSelGUI(state);
+        this.teamSel = new TeamSelGUI(state);
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(gunSel, this);
+        getServer().getPluginManager().registerEvents(teamSel, this);
         this.getCommand("jointeam").setExecutor(state);
         this.getCommand("startgame").setExecutor(state);
         this.getCommand("reset").setExecutor(state);
@@ -173,6 +176,8 @@ public class Main extends JavaPlugin implements Listener {
     		fireTheGun(player, gun.range, gun.radius, gun.damage, spray);
     		data.rounds -= 1;
     		player.setLevel(data.rounds);
+    		player.setCooldown(Material.NETHERITE_HOE, Gun.getGunByModelId(id).cooldown);
+    		player.setCooldown(Material.SPYGLASS, Gun.getGunByModelId(id).cooldown);
     	}
     }
     
@@ -201,8 +206,7 @@ public class Main extends JavaPlugin implements Listener {
     		int modelId = itemMeta.getCustomModelData();
     		fireSpecificGun(modelId, e.getPlayer().isSneaking(), e.getPlayer().isSprinting(), e.getPlayer());
     		e.setCancelled(true);
-    		e.getPlayer().setCooldown(Material.NETHERITE_HOE, Gun.getGunByModelId(modelId).cooldown);
-    		e.getPlayer().setCooldown(Material.SPYGLASS, Gun.getGunByModelId(modelId).cooldown);
+
     		//ItemMeta meta = e.getPlayer().getInventory().getItemInMainHand().getItemMeta();
             //meta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, new AttributeModifier("AttackSpeed", -1, Operation.ADD_NUMBER));
             //e.getPlayer().getInventory().getItemInMainHand().setItemMeta(meta);
@@ -236,19 +240,26 @@ public class Main extends JavaPlugin implements Listener {
         		e.getPlayer().getInventory().getItemInMainHand().setAmount(e.getPlayer().getInventory().getItemInMainHand().getAmount() - 1);
         		state.bomb = new Bomb(l, entity, this);
         		getServer().broadcastMessage("The bomb has been planted");
+        		for (PlayerData pd : state.total) {
+        			pd.p.sendTitle("", "The bomb has been planted", 20, 20, 20);
+        		}
     		} else {
     			l.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL, l, 10);
     			e.getPlayer().sendMessage("You can't place the bomb here!");
     		}
     	//clicked using the gun selector item
     	} else if ((e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK))
-    			   && e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.COPPER_INGOT)) {
+    			   && e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.PAPER)) {
     		Team t = state.getData(e.getPlayer()).getPossibleTeam();
     		if (t == null) {
-    			e.getPlayer().sendMessage("Please choose a team before selecting a weapon!");
+    			e.getPlayer().sendMessage("Lolwut you shouldn't be able to see this message, so there's some kind of issue. Try selecting a team again");
     		} else {
     			gunSel.openInventory(e.getPlayer(), t);
     		}
+    	//clicked using the team selector item
+    	} else if ((e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK))
+    			   && e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.GOLD_INGOT)) {
+    		teamSel.openInventory(e.getPlayer());
     	}
     	//left click using gun, reload
     	else if ((e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) &&

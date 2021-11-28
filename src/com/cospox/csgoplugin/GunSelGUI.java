@@ -1,7 +1,5 @@
 package com.cospox.csgoplugin;
 
-import java.util.Arrays;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
@@ -17,11 +15,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import net.md_5.bungee.api.ChatColor;
 
-public class InvGUI implements Listener {
+public class GunSelGUI implements Listener {
     private Inventory tInv;
     private Inventory ctInv;
     private GameState gs;
-	public InvGUI(GameState state) {
+	public GunSelGUI(GameState state) {
 		tInv = Bukkit.createInventory(null, 9, "Weapon Selector");
 		ctInv = Bukkit.createInventory(null, 9, "Weapon Selector");
 
@@ -43,7 +41,7 @@ public class InvGUI implements Listener {
         final ItemMeta meta = item.getItemMeta();
 
         meta.setDisplayName(name);
-        meta.setLore(Arrays.asList(lore));
+        ///meta.setLore(Arrays.asList(lore));
         meta.setCustomModelData(modeldata);
 
         item.setItemMeta(meta);
@@ -58,25 +56,17 @@ public class InvGUI implements Listener {
         e.setCancelled(true);
 
         final ItemStack clickedItem = e.getCurrentItem();
-
         if (clickedItem == null || clickedItem.getType().isAir()) return;
 
         final Player p = (Player) e.getWhoClicked();
-
-        int group = (e.getRawSlot() % 9 - 2) / 2;
-        //p.getInventory().addItem(clickedItem);
-        //p.sendMessage("X: " + group);
         PlayerData d = gs.getData(p);
-        if (group == 0) {
-        	//guns
-        	d.selectedGun = clickedItem.clone();
-        }
+        d.selectedGun = clickedItem.clone();
         p.sendMessage("Selected the " + clickedItem.getItemMeta().getDisplayName());
     }
 
     // Cancel dragging in our inventory
     @EventHandler
-    public void onInventoryClick(final InventoryDragEvent e) {
+    public void onInventoryDrag(final InventoryDragEvent e) {
         if (e.getInventory().equals(ctInv) || e.getInventory().equals(tInv)) {
           e.setCancelled(true);
         }

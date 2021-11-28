@@ -32,12 +32,8 @@ public class GameState implements CommandExecutor {
 	public int ctWins = 0;
 	public int totalRounds = 0;
 	public static final int maxRounds = 10;
-	//private Scoreboard board;
 	public GameState(Arena arena, Main plugin) {
 		this.arena = arena;
-		//this.board = plugin.getServer().getScoreboardManager().getNewScoreboard();
-		//Objective o = board.registerNewObjective("", "hjkl", "bnm");
-		//o.setDisplaySlot(DisplaySlot.SIDEBAR);
 		this.plugin = plugin;
         plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
         	public void run() {
@@ -69,14 +65,18 @@ public class GameState implements CommandExecutor {
 		p.setGameMode(GameMode.ADVENTURE);
 		total.add(new PlayerData(p));
 		p.getInventory().clear();
-		ItemStack selector = new ItemStack(Material.COPPER_INGOT, 1);
+		
+		ItemStack selector = new ItemStack(Material.GOLD_INGOT, 1);
 		ItemMeta meta = selector.getItemMeta();
-		meta.setDisplayName(ChatColor.RESET + "Weapon Selector");
+		meta.setDisplayName(ChatColor.RESET + "Team Selector");
 		meta.setCustomModelData(1);
 		selector.setItemMeta(meta);
 		p.getInventory().addItem(selector);
+
 		p.teleport(arena.lobby);
 		p.setBedSpawnLocation(arena.spawn);
+		p.setExp(0);
+		p.setLevel(0);
 		//p.setScoreboard(board);
 	}
 	
@@ -230,7 +230,7 @@ public class GameState implements CommandExecutor {
 			giveArmour(d.p, Team.COUNTERTERRORIST);
 			if (d.selectedGun != null) d.p.getInventory().addItem(d.selectedGun);
 			d.p.getInventory().addItem(knife.clone());
-			d.reloadWhatever();
+			d.resetGun();
 		}
 
 		for (PlayerData d : t) {
@@ -240,7 +240,7 @@ public class GameState implements CommandExecutor {
 			giveArmour(d.p, Team.TERRORIST);
 			if (d.selectedGun != null) d.p.getInventory().addItem(d.selectedGun);
 			d.p.getInventory().addItem(knife.clone());
-			d.reloadWhatever();
+			d.resetGun();
 		}
 		
     	Random rnd = ThreadLocalRandom.current();
@@ -258,6 +258,15 @@ public class GameState implements CommandExecutor {
 		timeoutSeconds = 2 * 60;
 	}
 	
+	void addWeaponSelector(PlayerData pd, Team t) {
+		ItemStack selector = new ItemStack(Material.PAPER, 1);
+		ItemMeta meta = selector.getItemMeta();
+		meta.setDisplayName(ChatColor.RESET + "Weapon Selector");
+		meta.setCustomModelData(t == Team.COUNTERTERRORIST ? 2 : 1);
+		selector.setItemMeta(meta);
+		pd.p.getInventory().addItem(selector);
+	}
+	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String name, String[] args) {
 		if (name.equals("jointeam")) {
@@ -266,14 +275,10 @@ public class GameState implements CommandExecutor {
 				return false;
 			}
 			Player p = (Player)sender;
-			if (args[0].equals("t") || args[0].equals("terrorists") ) {
-				getData(p).preferredTeam = Team.TERRORIST;
-				getData(p).clearWeapons();
-				sender.getServer().broadcastMessage(sender.getName() + " has joined the " + ChatColor.RED + ChatColor.BOLD + "terrorists");
-			} else if (args[0].equals("ct") || args[0].equals("counterterrorists") ) {
-				getData(p).preferredTeam = Team.COUNTERTERRORIST;
-				getData(p).clearWeapons();
-				sender.getServer().broadcastMessage(sender.getName() + " has joined the " + ChatColor.GREEN + ChatColor.BOLD + "counterterrorists");
+			if (args[0].equals("t") || args[0].equals("terrorists") || args[0].equals("terrorist")) {
+				playerJoinTeam(p, Team.TERRORIST);
+			} else if (args[0].equals("ct") || args[0].equals("counterterrorists") || args[0].equals("counterterrorist")) {
+				playerJoinTeam(p, Team.COUNTERTERRORIST);
 			} else {
 				sender.sendMessage("Unknown team \"" + args[0] + "\". Try using one of t, ct, terrorists, couunterterrorists");
 			}
@@ -289,5 +294,18 @@ public class GameState implements CommandExecutor {
 	
 	public Team getTeam(Player p) {
 		return getData(p).assignedTeam;
+	}
+
+	public void playerJoinTeam(Player p, Team team) {
+		PlayerData pd = getData(p);
+		pd.preferredTeam = team;
+		pd.clearWeapons();
+		p.getInventory().remove(Material.PAPER);
+		addWeaponSelector(pd, team);
+		if (team == Team.COUNTERTERRORIST) {
+			p.getServer().broadcastMessage(p.getName() + " has joined the " + ChatColor.GREEN + ChatColor.BOLD + "counterterrorists");
+		} else if (team == Team.TERRORIST) {
+			p.getServer().broadcastMessage(p.getName() + " has joined the " + ChatColor.RED + ChatColor.BOLD + "terrorists");
+		}
 	}
 }

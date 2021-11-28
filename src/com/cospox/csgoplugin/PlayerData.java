@@ -12,6 +12,7 @@ public class PlayerData {
 	public Team preferredTeam, assignedTeam;
 	public long cooldown;
 	public int rounds = 0;
+	public int roundsReserve = 0;
 	public int reloadCooldown = -1;
 	public int maxCooldown = -1;
 	public boolean alive = true;
@@ -21,9 +22,9 @@ public class PlayerData {
 	public PlayerData(Player p) {
 		this.p = p;
 		Scoreboard sb = Bukkit.getScoreboardManager().getNewScoreboard();
-		Objective ob = sb.registerNewObjective("asdf", "dummy", "asdf-asdf");
+		Objective ob = sb.registerNewObjective("asdf", "dummy", "test");
 		ob.setDisplaySlot(DisplaySlot.SIDEBAR);
-		ob.getScore("Ammo").setScore(0);
+		ob.getScore("Reserve Ammo").setScore(0);
 		p.setScoreboard(sb);
 		this.sb = sb;
 		this.ob = ob;
@@ -49,10 +50,10 @@ public class PlayerData {
 		if (this.selectedGun == null) {
 			if (getPossibleTeam() == Team.COUNTERTERRORIST) {
 				this.selectedGun = Gun.guns[Gun.CTDEFAULT].getItemStack();
-				this.reload(Gun.guns[Gun.CTDEFAULT]);
+				resetGun();
 			} else {
 				this.selectedGun = Gun.guns[Gun.TDEFAULT].getItemStack();
-				this.reload(Gun.guns[Gun.TDEFAULT]);
+				resetGun();
 			}
 		}
 	}
@@ -62,14 +63,21 @@ public class PlayerData {
 	}
 	
 	public void reload(Gun g) {
-		this.rounds = g.maxRounds;
+		int delta = g.maxRounds - this.rounds;
+		if (delta > this.roundsReserve) {
+			delta = this.roundsReserve;
+		}
+		this.roundsReserve -= delta;
+		this.rounds += delta;
+		
 		p.setLevel(rounds);
 		maxCooldown = g.reloadTime;
 		reloadCooldown = g.reloadTime;
 	}
 	
-	public void reloadWhatever() {
+	public void resetGun() {
 		int data = selectedGun.getItemMeta().getCustomModelData();
 		reload(Gun.getGunByModelId(data));
+		this.roundsReserve = Gun.getGunByModelId(data).roundsReserve;
 	}
 }

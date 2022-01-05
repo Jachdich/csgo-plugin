@@ -22,7 +22,7 @@ public class PlayerData {
 	public PlayerData(Player p) {
 		this.p = p;
 		Scoreboard sb = Bukkit.getScoreboardManager().getNewScoreboard();
-		Objective ob = sb.registerNewObjective("asdf", "dummy", "test");
+		Objective ob = sb.registerNewObjective("asdf", "dummy", "Gun Data");
 		ob.setDisplaySlot(DisplaySlot.SIDEBAR);
 		ob.getScore("Reserve Ammo").setScore(0);
 		p.setScoreboard(sb);
@@ -73,11 +73,13 @@ public class PlayerData {
 		p.setLevel(rounds);
 		maxCooldown = g.reloadTime;
 		reloadCooldown = g.reloadTime;
+		ob.getScore("Reserve Ammo").setScore(roundsReserve);
 	}
 	
 	public void resetGun() {
 		int data = selectedGun.getItemMeta().getCustomModelData();
 		reload(Gun.getGunByModelId(data));
 		this.roundsReserve = Gun.getGunByModelId(data).roundsReserve;
+		ob.getScore("Reserve Ammo").setScore(roundsReserve);
 	}
 }

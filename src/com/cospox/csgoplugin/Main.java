@@ -1,5 +1,7 @@
 package com.cospox.csgoplugin;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
@@ -28,6 +30,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -53,6 +56,8 @@ import net.md_5.bungee.api.chat.TextComponent;
 //TODO bomb still goes off even tho people die
 //TODO guns should come loaded
 //TODO disable friendly fire
+//TODO different guns for t and ct
+//TODO awp shoot cooldown animation
 
 
 
@@ -65,25 +70,44 @@ import net.md_5.bungee.api.chat.TextComponent;
 //time to get weapons and buy shit idk
 
 
-//TODO awp shoot cooldown animation
-//TODO different guns for t and ct
 //TODO default knife
 //TODO sound effects, bomb, dying, shooting
 	//done ish: shooting
+
 public class Main extends JavaPlugin implements Listener {
 	private GunSelGUI gunSel;
 	private TeamSelGUI teamSel;
 	GameState state;
 	private static final boolean FRIENDLY_FIRE_DISABLED = true;
+	
+	private static final Material[] forbidden_doors = {
+			Material.SPRUCE_TRAPDOOR,
+			Material.SPRUCE_DOOR,
+			Material.ACACIA_DOOR,
+			Material.ACACIA_TRAPDOOR,
+			Material.BIRCH_DOOR,
+			Material.BIRCH_TRAPDOOR,
+			Material.CRIMSON_DOOR,
+			Material.CRIMSON_TRAPDOOR,
+			Material.WARPED_DOOR,
+			Material.WARPED_TRAPDOOR,
+			Material.DARK_OAK_DOOR,
+			Material.DARK_OAK_TRAPDOOR,
+			Material.JUNGLE_DOOR,
+			Material.JUNGLE_TRAPDOOR,
+			Material.OAK_DOOR,
+			Material.OAK_TRAPDOOR,
+			Material.PAINTING,
+	};
     @Override
     public void onEnable() {
         Arena arena = new Arena(
-        		new Location(this.getServer().getWorlds().get(0), 6.5, 111, -123.5),
-        		new Location(this.getServer().getWorlds().get(0), -47.5, 110, -125.5),
-        		new Location(this.getServer().getWorlds().get(0), -32.5, 114, -52.5),
-        		new Location(this.getServer().getWorlds().get(0), -10, 107, -123),
-        		new Location(this.getServer().getWorlds().get(0), -84.5, 100, -4.5),
-        		new Location(this.getServer().getWorlds().get(0), -23, 131, -98) //TODO get the real one
+        		new Location(this.getServer().getWorlds().get(0), 1002.5, 39, 1010.5),
+        		new Location(this.getServer().getWorlds().get(0), 948.5, 38, 1007.5),
+        		new Location(this.getServer().getWorlds().get(0), 964.5, 42, 1080.5),
+        		new Location(this.getServer().getWorlds().get(0), 986, 35, 1009.5),
+        		new Location(this.getServer().getWorlds().get(0), 0.5, 6, 0.5),
+        		new Location(this.getServer().getWorlds().get(0), 970, 45, 1048)
         );
         
         state = new GameState(arena, this);
@@ -101,6 +125,8 @@ public class Main extends JavaPlugin implements Listener {
         getServer().getWorlds().get(0).setGameRule(GameRule.NATURAL_REGENERATION, false);
         getServer().getWorlds().get(0).setGameRule(GameRule.DO_ENTITY_DROPS, false);
         getServer().getWorlds().get(0).setGameRule(GameRule.KEEP_INVENTORY, true);
+        getServer().getWorlds().get(0).setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+        getServer().getWorlds().get(0).setTime(12000);
         getServer().getWorlds().get(0).setDifficulty(Difficulty.PEACEFUL);
         
         for (Player p: getServer().getOnlinePlayers()) {
@@ -176,13 +202,13 @@ public class Main extends JavaPlugin implements Listener {
     		fireTheGun(player, gun.range, gun.radius, gun.damage, spray);
     		data.rounds -= 1;
     		player.setLevel(data.rounds);
-    		player.setCooldown(Material.NETHERITE_HOE, Gun.getGunByModelId(id).cooldown);
+    		player.setCooldown(Material.STONE_HOE, Gun.getGunByModelId(id).cooldown);
     		player.setCooldown(Material.SPYGLASS, Gun.getGunByModelId(id).cooldown);
     	}
     }
     
     private boolean isGun(ItemStack item) {
-    	if (item.getType() != Material.NETHERITE_HOE && item.getType() != Material.SPYGLASS) return false;
+    	if (item.getType() != Material.STONE_HOE && item.getType() != Material.SPYGLASS) return false;
     	ItemMeta meta = item.getItemMeta();
     	if (!meta.hasCustomModelData()) return false;
     	if (meta.getCustomModelData() > 0) return true;
@@ -193,7 +219,7 @@ public class Main extends JavaPlugin implements Listener {
     public void interactEvent(PlayerInteractEvent e) {
     	//if the player right clicked with a hoe
     	if ((e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK)) && 
-    	   	 e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.NETHERITE_HOE)) {
+    	   	 e.getPlayer().getInventory().getItemInMainHand().getType().equals(Material.STONE_HOE)) {
     		ItemMeta itemMeta = e.getPlayer().getInventory().getItemInMainHand().getItemMeta();
     		
     		//ignore regular hoe that doesnt do anything
@@ -267,6 +293,10 @@ public class Main extends JavaPlugin implements Listener {
     		int modelId = e.getItem().getItemMeta().getCustomModelData();
     		state.getData(e.getPlayer()).reload(Gun.getGunByModelId(modelId));
     	}
+    	
+    	if (e.hasBlock() && Arrays.asList(forbidden_doors).contains(e.getClickedBlock().getType())) {
+    		e.setCancelled(true);
+    	}
     }
     
     @EventHandler
@@ -278,6 +308,7 @@ public class Main extends JavaPlugin implements Listener {
     		}
     	}
     }
+    
     
     @EventHandler
     public void sneakEvent(PlayerToggleSneakEvent e) {
@@ -337,5 +368,13 @@ public class Main extends JavaPlugin implements Listener {
     			 e.setCancelled(true);
     		 }
     	}
+    	if (e.getEntityType() == EntityType.ITEM_FRAME || e.getEntityType() == EntityType.PAINTING) {
+    		e.setCancelled(true);
+    	}
+    }
+    
+    @EventHandler
+    public void e(HangingBreakByEntityEvent e) {
+    	e.setCancelled(true);
     }
 }

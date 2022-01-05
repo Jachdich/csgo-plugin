@@ -23,13 +23,13 @@ public class GunSelGUI implements Listener {
 		tInv = Bukkit.createInventory(null, 9, "Weapon Selector");
 		ctInv = Bukkit.createInventory(null, 9, "Weapon Selector");
 
-        tInv.setItem(3, createGuiItem(Material.NETHERITE_HOE, 1, ChatColor.RESET + "AK47",  "§asome gun stats here", "§aand here too"));
-        tInv.setItem(4, createGuiItem(Material.NETHERITE_HOE, 4, ChatColor.RESET + "Glock", "§asome gun stats here", "§aand here too"));
-        tInv.setItem(5, createGuiItem(Material.SPYGLASS,      3, ChatColor.RESET + "AWP",   "§asome gun stats here", "§aand here too"));
+        tInv.setItem(3, createGuiItem(Material.STONE_HOE, 1, ChatColor.RESET + "AK47",  "§asome gun stats here", "§aand here too"));
+        tInv.setItem(4, createGuiItem(Material.STONE_HOE, 4, ChatColor.RESET + "Glock", "§asome gun stats here", "§aand here too"));
+        tInv.setItem(5, createGuiItem(Material.SPYGLASS,  3, ChatColor.RESET + "AWP",   "§asome gun stats here", "§aand here too"));
         
-        ctInv.setItem(3, createGuiItem(Material.NETHERITE_HOE, 2, ChatColor.RESET + "M4A1S", "§asome gun stats here", "§aand here too"));
-        ctInv.setItem(4, createGuiItem(Material.SPYGLASS,      5, ChatColor.RESET + "USPS",  "§asome gun stats here", "§aand here too"));
-        ctInv.setItem(5, createGuiItem(Material.SPYGLASS,      3, ChatColor.RESET + "AWP",   "§asome gun stats here", "§aand here too"));
+        ctInv.setItem(3, createGuiItem(Material.STONE_HOE, 2, ChatColor.RESET + "M4A1S", "§asome gun stats here", "§aand here too"));
+        ctInv.setItem(4, createGuiItem(Material.STONE_HOE, 5, ChatColor.RESET + "USPS",  "§asome gun stats here", "§aand here too"));
+        ctInv.setItem(5, createGuiItem(Material.SPYGLASS,  3, ChatColor.RESET + "AWP",   "§asome gun stats here", "§aand here too"));
         this.gs = state;
 	}
     public void openInventory(final HumanEntity ent, Team t) {
@@ -60,7 +60,7 @@ public class GunSelGUI implements Listener {
 
         final Player p = (Player) e.getWhoClicked();
         PlayerData d = gs.getData(p);
-        d.selectedGun = clickedItem.clone();
+        d.selectedGun = Gun.getGunByModelId(clickedItem.getItemMeta().getCustomModelData()).getItemStack();
         p.sendMessage("Selected the " + clickedItem.getItemMeta().getDisplayName());
     }
 

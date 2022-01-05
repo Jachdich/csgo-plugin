@@ -74,10 +74,11 @@ public class Main extends JavaPlugin implements Listener {
 	private GunSelGUI gunSel;
 	private TeamSelGUI teamSel;
 	GameState state;
+	public Arena dust2, mirage;
 	private static final boolean FRIENDLY_FIRE_DISABLED = true;
     @Override
     public void onEnable() {
-        Arena arena = new Arena(
+        dust2 = new Arena(
         		new Location(this.getServer().getWorlds().get(0), 6.5, 111, -123.5),
         		new Location(this.getServer().getWorlds().get(0), -47.5, 110, -125.5),
         		new Location(this.getServer().getWorlds().get(0), -32.5, 114, -52.5),
@@ -86,7 +87,16 @@ public class Main extends JavaPlugin implements Listener {
         		new Location(this.getServer().getWorlds().get(0), -23, 131, -98) //TODO get the real one
         );
         
-        state = new GameState(arena, this);
+        mirage = new Arena(
+        		new Location(this.getServer().getWorlds().get(0), 6.5, 111, -123.5),
+        		new Location(this.getServer().getWorlds().get(0), -47.5, 110, -125.5),
+        		new Location(this.getServer().getWorlds().get(0), -32.5, 114, -52.5),
+        		new Location(this.getServer().getWorlds().get(0), -10, 107, -123),
+        		new Location(this.getServer().getWorlds().get(0), -84.5, 100, -4.5),
+        		new Location(this.getServer().getWorlds().get(0), -23, 131, -98) //TODO get the real one
+        );
+        
+        state = new GameState(this);
         this.gunSel = new GunSelGUI(state);
         this.teamSel = new TeamSelGUI(state);
         getServer().getPluginManager().registerEvents(this, this);

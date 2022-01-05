@@ -32,8 +32,8 @@ public class GameState implements CommandExecutor {
 	public int ctWins = 0;
 	public int totalRounds = 0;
 	public static final int maxRounds = 10;
-	public GameState(Arena arena, Main plugin) {
-		this.arena = arena;
+	public GameState(Main plugin) {
+		this.arena = null;
 		this.plugin = plugin;
         plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new Runnable() {
         	public void run() {
@@ -46,6 +46,10 @@ public class GameState implements CommandExecutor {
         		updateReload();
         	}
         }, 0, 1);
+	}
+	
+	public void setArena(Arena arena) {
+		this.arena = arena;
 	}
 	
 	public void updateReload() {
@@ -128,6 +132,7 @@ public class GameState implements CommandExecutor {
 	}
 
 	public void resetGame() {
+		arena = null;
 		total.clear();
 		t.clear();
 		ct.clear();
@@ -284,10 +289,27 @@ public class GameState implements CommandExecutor {
 			}
 			return true;
 		} else if (name.equals("startgame")) {
+			if (arena == null) {
+				sender.sendMessage("Select a map before starting the game! /setmap <dust2 or mirage>");
+				return false;
+			}
 			startGame();
 			return true;
 		} else if (name.equals("reset")) {
 			resetGame();
+		} else if (name.equals("setmap")) {
+			if (args.length != 1) {
+				return false;
+			}
+			if (args[0] == "mirage") {
+				arena = plugin.mirage;
+			} else if (args[0] == "dust2") {
+				arena = plugin.dust2;
+			} else {
+				sender.sendMessage("Unknown map. Avaliable maps are mirage and dust2");
+				return true;
+			}
+			return true;
 		}
 		return true;
 	}

@@ -118,6 +118,7 @@ public class GameState implements CommandExecutor {
 	public void playerDie(Player p) {
 		getData(p).alive = false;
 		p.setGameMode(GameMode.SPECTATOR);
+		p.teleport(arena.spawn);
 		//check t and ct teams for alive-ness
 		if (!isTeamAlive(t)) { if (bomb == null) { ctWin(); } }
 		if (!isTeamAlive(ct)) tWin();
